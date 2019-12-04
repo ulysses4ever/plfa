@@ -703,6 +703,24 @@ first four days using a finite story of creation, as
 
 ```agda
 -- Your code goes here
+-- First day:
+-- 0 : ℕ,
+
+-- Second day:
+-- 0 : ℕ, 1 : ℕ
+_ : (0 + 0) + 0 ≡ 0 + (0 + 0)
+_ = refl
+
+-- Second day:
+-- 0 : ℕ, 1 : ℕ, 2 : ℕ
+_ : (0 + 0) + 0 ≡ 0 + (0 + 0)
+_ = refl
+_ : (1 + 0) + 0 ≡ 1 + (0 + 0)
+_ = refl
+_ : (0 + 1) + 0 ≡ 0 + (1 + 0)
+_ = refl
+_ : (0 + 0) + 1 ≡ 0 + (0 + 1)
+_ = refl
 ```
 
 ## Associativity with rewrite
@@ -875,6 +893,8 @@ is associative and commutative.
 
 ```agda
 -- Your code goes here
++-swap : ∀ (m n p : ℕ) → m + (n + p) ≡ n + (m + p)
++-swap m n p rewrite +-comm m (n + p) | +-comm m p | +-assoc n p m = refl
 ```
 
 
@@ -888,6 +908,11 @@ for all naturals `m`, `n`, and `p`.
 
 ```agda
 -- Your code goes here
+*-distrib-+ : ∀ (m n p : ℕ) → (m + n) * p ≡ m * p + n * p
+*-distrib-+ zero n p = refl
+*-distrib-+ (suc m) n p
+  rewrite *-distrib-+ m n p |
+          +-assoc p (m * p) (n * p) = refl
 ```
 
 
@@ -901,6 +926,11 @@ for all naturals `m`, `n`, and `p`.
 
 ```agda
 -- Your code goes here
+*-assoc : ∀ (m n p : ℕ) → (m * n) * p ≡ m * (n * p)
+*-assoc zero n p = refl
+*-assoc (suc m) n p
+  rewrite *-distrib-+ n (m * n) p |
+          *-assoc m n p = refl
 ```
 
 
@@ -939,10 +969,27 @@ Show that monus associates with addition, that is,
 
 for all naturals `m`, `n`, and `p`.
 
-```agda
--- Your code goes here
 ```
+∸-zero-left : ∀ (m : ℕ) → 0 ∸ m ≡ 0
+∸-zero-left zero = refl
+∸-zero-left (suc m) = refl
 
+∸-+-assoc : ∀ (m n p : ℕ) → m ∸ n ∸ p ≡ m ∸ (n + p)
+∸-+-assoc m zero p = refl
+∸-+-assoc zero (suc n) p
+  rewrite ∸-zero-left (suc n) |
+          ∸-zero-left p  = refl
+∸-+-assoc (suc m) (suc n) p
+  rewrite ∸-+-assoc m n p = refl
+
+∸-suc-assoc : ∀ (n m : ℕ) → n ∸ suc m ≡ n ∸ m ∸ 1
+∸-suc-assoc zero n
+  rewrite ∸-zero-left (suc n) |
+          ∸-zero-left n = refl
+∸-suc-assoc (suc m) zero = refl
+∸-suc-assoc (suc m) (suc n)
+  rewrite ∸-suc-assoc m n = refl
+```
 
 #### Exercise `+*^` (stretch)
 

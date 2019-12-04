@@ -77,8 +77,8 @@ successor of two; and so on.
 
 Write out `7` in longhand.
 
-```agda
--- Your code goes here
+```
+seven = suc (suc (suc (suc (suc (suc (suc zero))))))
 ```
 
 You will need to give both a type signature and definition for the
@@ -429,8 +429,22 @@ other word for evidence, which we will use interchangeably, is _proof_.
 
 Compute `3 + 4`, writing out your reasoning as a chain of equations, using the equations for `+`.
 
-```agda
--- Your code goes here
+```
+_ : 3 + 4 ≡ 7
+_ =
+  begin
+    3 + 4
+  ≡⟨⟩
+    suc (2 + 4)
+  ≡⟨⟩
+    suc (suc (1 + 4))
+  ≡⟨⟩
+    suc (suc (suc (0 + 4)))
+  ≡⟨⟩
+    suc (suc (suc 4))
+  ≡⟨⟩
+    7
+  ∎
 ```
 
 
@@ -465,7 +479,8 @@ Again, the definition is well founded in that multiplication of
 larger numbers is defined in terms of multiplication of smaller numbers.
 
 For example, let's multiply two and three:
-```agda
+```
+_ : 2 * 3 ≡ 6
 _ =
   begin
     2 * 3
@@ -491,8 +506,22 @@ it can easily be inferred from the corresponding term.
 Compute `3 * 4`, writing out your reasoning as a chain of equations, using the equations for `*`.
 (You do not need to step through the evaluation of `+`.)
 
-```agda
--- Your code goes here
+```
+_ : 3 * 4 ≡ 12
+_ =
+  begin
+    3 * 4
+  ≡⟨⟩    -- inductive case
+    4 + (2 * 4)
+  ≡⟨⟩    -- inductive case
+    4 + (4 + (1 * 4))
+  ≡⟨⟩    -- inductive case
+    4 + (4 + (4 + (0 * 4)))
+  ≡⟨⟩    -- base case
+    4 + (4 + (4 + 0))
+  ≡⟨⟩    -- simplify
+    12
+  ∎
 ```
 
 
@@ -505,8 +534,28 @@ Define exponentiation, which is given by the following equations:
 
 Check that `3 ^ 4` is `81`.
 
-```agda
--- Your code goes here
+```
+_^_ : ℕ → ℕ → ℕ
+m ^ zero      =  1
+m ^ (suc n)  =  m * (m ^ n)
+
+_ : 3 ^ 4 ≡ 81
+_ =
+  begin
+    3 ^ 4
+  ≡⟨⟩    -- inductive case
+    3 * (3 ^ 3)
+  ≡⟨⟩    -- inductive case
+    3 * (3 * (3 ^ 2))
+  ≡⟨⟩    -- inductive case
+    3 * (3 * (3 * (3 ^ 1)))
+  ≡⟨⟩    -- inductive case
+    3 * (3 * (3 * (3 * (3 ^ 0))))
+  ≡⟨⟩    -- base case
+    3 * (3 * (3 * (3 * 1)))
+  ≡⟨⟩    -- simplify (cheating here: should spell out all the *'s)
+   81
+  ∎
 ```
 
 
@@ -935,8 +984,61 @@ For the former, choose the bitstring to have no leading zeros if it
 represents a positive natural, and represent zero by `⟨⟩ O`.
 Confirm that these both give the correct answer for zero through four.
 
-```agda
--- Your code goes here
+```
+inc : Bin → Bin
+inc ⟨⟩ = ⟨⟩ I
+inc (b O) = b I
+inc (b I) = inc b O
+
+to : ℕ → Bin
+to zero = ⟨⟩ O
+to (suc n) = inc (to n)
+
+from : Bin → ℕ
+from ⟨⟩ = zero
+from (b O) = from b * 2
+from (b I) = suc (from b * 2)
+
+_ : to zero ≡ ⟨⟩ O
+_ =
+  begin
+    to zero
+  ≡⟨⟩
+    ⟨⟩ O
+  ∎
+
+_ : to (suc zero) ≡ ⟨⟩ I
+_ =
+  begin
+    to (suc zero)  -- there should be more detailed steps afterwards
+  ≡⟨⟩
+    ⟨⟩ I
+  ∎
+
+_ : to (suc (suc zero)) ≡ ⟨⟩ I O
+_ =
+  begin
+    to (suc (suc zero))
+  ≡⟨⟩
+    inc (to (suc zero))
+  ≡⟨⟩
+    inc (inc (to zero))
+  ≡⟨⟩
+    inc (inc (⟨⟩ O))
+  ≡⟨⟩
+    inc (⟨⟩ I)
+  ≡⟨⟩
+    ⟨⟩ I O
+  ∎
+
+_ : from (⟨⟩ I O) ≡ suc (suc zero)
+_ =
+  begin
+    from (⟨⟩ I O)
+  ≡⟨⟩
+    suc (suc zero)
+  ∎
+
 ```
 
 
