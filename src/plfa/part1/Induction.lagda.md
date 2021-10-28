@@ -26,7 +26,11 @@ and some operations upon them.  We also require a couple of new operations,
 import Relation.Binary.PropositionalEquality as Eq
 open Eq using (_≡_; refl; cong; sym)
 open Eq.≡-Reasoning using (begin_; _≡⟨⟩_; step-≡; _∎)
-open import Data.Nat using (ℕ; zero; suc; _+_; _*_; _∸_;_^_)
+-- open import Data.Nat using (ℕ; zero; suc; _+_; _*_; _^_)
+open import plfa.part1.Naturals -- using (ℕ; zero; suc; _+_; _*_; _∸_; _^_; Bin; to; from; inc; ⟨⟩; _O; _I)
+
+-- impossible : 7 ≡ suc zero
+
 ```
 (Importing `step-≡` defines `_≡⟨_⟩_`.)
 
@@ -891,8 +895,7 @@ for all naturals `m`, `n`, and `p`. No induction is needed,
 just apply the previous results which show addition
 is associative and commutative.
 
-```agda
--- Your code goes here
+```
 +-swap : ∀ (m n p : ℕ) → m + (n + p) ≡ n + (m + p)
 +-swap m n p rewrite +-comm m (n + p) | +-comm m p | +-assoc n p m = refl
 ```
@@ -906,8 +909,7 @@ Show multiplication distributes over addition, that is,
 
 for all naturals `m`, `n`, and `p`.
 
-```agda
--- Your code goes here
+```
 *-distrib-+ : ∀ (m n p : ℕ) → (m + n) * p ≡ m * p + n * p
 *-distrib-+ zero n p = refl
 *-distrib-+ (suc m) n p
@@ -924,8 +926,7 @@ Show multiplication is associative, that is,
 
 for all naturals `m`, `n`, and `p`.
 
-```agda
--- Your code goes here
+```
 *-assoc : ∀ (m n p : ℕ) → (m * n) * p ≡ m * (n * p)
 *-assoc zero n p = refl
 *-assoc (suc m) n p
@@ -943,8 +944,28 @@ Show multiplication is commutative, that is,
 for all naturals `m` and `n`.  As with commutativity of addition,
 you will need to formulate and prove suitable lemmas.
 
-```agda
--- Your code goes here
+```
+*-identity-r : ∀ (n : ℕ) → n * 0 ≡ 0
+*-identity-r zero = refl
+*-identity-r (suc n)
+  rewrite *-identity-r n = refl
+
+*-succ-r : ∀ (n m : ℕ) → n * (suc m) ≡ n + n * m
+*-succ-r zero m = refl
+*-succ-r (suc n) m
+  rewrite
+    cong suc (sym (+-assoc n m (n * m))) |
+    +-comm n m |
+    +-assoc m n (n * m) |
+    cong suc (cong (m +_) (*-succ-r n m)) = refl
+
+*-comm : ∀ (m n : ℕ) → m * n ≡ n * m
+*-comm zero n
+  rewrite *-identity-r n = refl
+*-comm (suc m) n
+  rewrite
+    *-succ-r n m |
+    cong (n +_) (*-comm n m) = refl
 ```
 
 
@@ -956,8 +977,11 @@ Show
 
 for all naturals `n`. Did your proof require induction?
 
-```agda
--- Your code goes here
+```
+∸-zero-left : ∀ (n : ℕ) → 0 ∸ n ≡ 0
+∸-zero-left zero = refl
+∸-zero-left (suc n) = refl
+
 ```
 
 
@@ -970,10 +994,6 @@ Show that monus associates with addition, that is,
 for all naturals `m`, `n`, and `p`.
 
 ```
-∸-zero-left : ∀ (m : ℕ) → 0 ∸ m ≡ 0
-∸-zero-left zero = refl
-∸-zero-left (suc m) = refl
-
 ∸-+-assoc : ∀ (m n p : ℕ) → m ∸ n ∸ p ≡ m ∸ (n + p)
 ∸-+-assoc m zero p = refl
 ∸-+-assoc zero (suc n) p
@@ -1002,9 +1022,82 @@ Show the following three laws
 for all `m`, `n`, and `p`.
 
 ```
--- Your code goes here
-```
+^-distribˡ-+-* : ∀ (m n p : ℕ) → m ^ (n + p) ≡ (m ^ n) * (m ^ p)
+^-distribˡ-+-* m zero p =
+  begin
+    m ^ (0 + p)
+  ≡⟨⟩
+    m ^ p
+  ≡⟨ sym (+-identityʳ (m ^ p)) ⟩
+    (m ^ p) + zero
+  ≡⟨⟩
+    (m ^ p) + 0 * (m ^ p)
+  ∎
 
+^-distribˡ-+-* m (suc n) p
+  rewrite ^-distribˡ-+-* m n p | *-assoc m (m ^ n) (m ^ p) = refl
+
+
+^-distribʳ-* : ∀ (m n p : ℕ) → (m * n) ^ p ≡ m ^ p * n ^ p
+^-distribʳ-* m n zero = refl
+^-distribʳ-* m n (suc p) =
+  begin
+    m * n * ((m * n) ^ p)
+
+  ≡⟨ cong ((m * n) *_) (^-distribʳ-* m n p) ⟩
+
+    m * n * (m ^ p * n ^ p)
+
+  ≡⟨ *-assoc m n (m ^ p * n ^ p) ⟩
+
+    m * (n * (m ^ p * n ^ p))
+
+  ≡⟨ cong (m *_) (sym (*-assoc n (m ^ p) (n ^ p))) ⟩
+
+    m * ((n * m ^ p) * n ^ p)
+
+  ≡⟨ cong (m *_) (cong (_* n ^ p) (*-comm n (m ^ p))) ⟩
+
+    m * ((m ^ p * n) * n ^ p)
+
+  ≡⟨ cong (m *_) (*-assoc (m ^ p) n (n ^ p)) ⟩
+
+    m * (m ^ p * (n * n ^ p))
+
+  ≡⟨⟩
+
+    m * (m ^ p * n ^ suc p)
+
+  ≡⟨ sym (*-assoc m (m ^ p) (n ^ suc p)) ⟩
+
+    (m * m ^ p) * n ^ suc p
+
+  ≡⟨⟩
+
+    m ^ suc p * n ^ suc p
+  ∎
+
+
+^-*-assoc : ∀ (m n p : ℕ) → (m ^ n) ^ p ≡ m ^ (n * p)
+^-*-assoc m n zero rewrite cong (m ^_) (*-identity-r n) = refl
+^-*-assoc m n (suc p) =
+  begin
+    (m ^ n) * ((m ^ n) ^ p)
+
+  ≡⟨ cong ((m ^ n) *_) (^-*-assoc m n p) ⟩
+
+    (m ^ n) * (m ^ (n * p))
+
+  ≡⟨ sym (^-distribˡ-+-* m n (n * p)) ⟩
+
+    m ^ (n + n * p)
+
+  ≡⟨ cong (m ^_) (sym (*-succ-r n p)) ⟩
+
+    m ^ (n * suc p)
+  ∎
+
+```
 
 #### Exercise `Bin-laws` (stretch) {#Bin-laws}
 
@@ -1026,16 +1119,34 @@ over bitstrings:
 
 For each law: if it holds, prove; if not, give a counterexample.
 
-```agda
--- Your code goes here
+```
+--    from (inc b) ≡ suc (from b)
+suc-from-comm : ∀ (b : Bin) → from (inc b) ≡ suc (from b)
+suc-from-comm ⟨⟩ = refl
+suc-from-comm (b O) = refl
+suc-from-comm (b I) rewrite suc-from-comm b = refl
+
+--    to (from b) ≡ b  -- doesn't hold, e.g to (from (⟨⟩ O I)) = ⟨⟩ I != ⟨⟩ O I
+
+--    from (to n) ≡ n
+from-to-id : ∀ (n : ℕ) → from (to n) ≡ n
+from-to-id zero = refl
+from-to-id (suc n) =
+  begin
+    from (inc (to n))
+  ≡⟨ suc-from-comm (to n) ⟩
+    suc (from (to n))
+  ≡⟨ cong suc (from-to-id n) ⟩
+    suc n
+  ∎
 ```
 
 
 ## Standard library
 
 Definitions similar to those in this chapter can be found in the standard library:
-```agda
-import Data.Nat.Properties using (+-assoc; +-identityʳ; +-suc; +-comm)
+```
+-- import Data.Nat.Properties using (+-assoc; +-identityʳ; +-suc; +-comm)
 ```
 
 ## Unicode
