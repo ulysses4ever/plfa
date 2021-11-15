@@ -15,8 +15,9 @@ the next step is to define relations, such as _less than or equal_.
 ```agda
 import Relation.Binary.PropositionalEquality as Eq
 open Eq using (_≡_; refl; cong)
-open import Data.Nat using (ℕ; zero; suc; _+_)
-open import Data.Nat.Properties using (+-comm; +-identityʳ)
+open Eq.≡-Reasoning
+open import Data.Nat using (ℕ; zero; suc; _+_; _*_)
+open import Data.Nat.Properties using (+-comm; +-suc; *-comm; +-identityʳ)
 ```
 
 
@@ -551,8 +552,26 @@ transitivity proves `m + p ≤ n + q`, as was to be shown.
 
 Show that multiplication is monotonic with regard to inequality.
 
-```agda
--- Your code goes here
+```
+*-monoʳ-≤ : ∀ (n p q : ℕ)
+  → p ≤ q
+    -------------
+  → n * p ≤ n * q
+*-monoʳ-≤ zero    p q p≤q  =  z≤n
+*-monoʳ-≤ (suc n) p q p≤q  = +-mono-≤ p q (n * p) (n * q) p≤q (*-monoʳ-≤ n p q p≤q)
+
+*-monoˡ-≤ : ∀ (m n p : ℕ)
+  → m ≤ n
+    -------------
+  → m * p ≤ n * p
+*-monoˡ-≤ m n p m≤n  rewrite *-comm m p | *-comm n p  = *-monoʳ-≤ p m n m≤n
+
+*-mono-≤ : ∀ (m n p q : ℕ)
+  → m ≤ n
+  → p ≤ q
+    -------------
+  → m * p ≤ n * q
+*-mono-≤ m n p q m≤n p≤q  =  ≤-trans (*-monoˡ-≤ m n p m≤n) (*-monoʳ-≤ n p q p≤q)
 ```
 
 
@@ -599,8 +618,14 @@ exploiting the corresponding properties of inequality.
 Show that strict inequality is transitive. Use a direct proof. (A later
 exercise exploits the relation between < and ≤.)
 
-```agda
--- Your code goes here
+```
+<-trans : ∀ {m n p : ℕ}
+  → m < n
+  → n < p
+    -----
+  → m < p
+<-trans z<s       (s<s _)    =  z<s
+<-trans (s<s m<n) (s<s n<p)  =  s<s (<-trans m<n n<p)
 ```
 
 #### Exercise `trichotomy` (practice) {#trichotomy}
@@ -617,8 +642,32 @@ similar to that used for totality.
 (We will show that the three cases are exclusive after we introduce
 [negation](/Negation/).)
 
-```agda
--- Your code goes here
+```
+data Trital (m n : ℕ) : Set where
+
+  forward :
+      m < n
+      ---------
+    → Trital m n
+
+  flipped :
+      n < m
+      ---------
+    → Trital m n
+
+  eq :
+      m ≡ n
+      ---------
+    → Trital m n
+
+<-trital : ∀ (m n : ℕ) → Trital m n
+<-trital zero    zero                      =  eq refl
+<-trital zero    (suc _)                   =  forward z<s
+<-trital (suc _) zero                      =  flipped z<s
+<-trital (suc m) (suc n) with <-trital m n
+...                        | forward m<n  =  forward (s<s m<n)
+...                        | flipped n<m  =  flipped (s<s n<m)
+...                        | eq m=n       =  eq (cong suc m=n)
 ```
 
 #### Exercise `+-mono-<` (practice) {#plus-mono-less}
@@ -626,16 +675,45 @@ similar to that used for totality.
 Show that addition is monotonic with respect to strict inequality.
 As with inequality, some additional definitions may be required.
 
-```agda
--- Your code goes here
+```
++-monoʳ-< : ∀ (n p q : ℕ)
+  → p < q
+    -------------
+  → n + p < n + q
++-monoʳ-< zero p q p<q = p<q
++-monoʳ-< (suc n) p q p<q = s<s (+-monoʳ-< n p q p<q)
+
++-monoˡ-< : ∀ (m n p : ℕ)
+  → m < n
+    -------------
+  → m + p < n + p
++-monoˡ-< m n p m<n  rewrite +-comm m p | +-comm n p  = +-monoʳ-< p m n m<n
+
++-mono-< : ∀ (m n p q : ℕ)
+  → m < n
+  → p < q
+    -------------
+  → m + p < n + q
++-mono-< m n p q m<n p<q  =  <-trans (+-monoˡ-< m n p m<n) (+-monoʳ-< n p q p<q)
 ```
 
 #### Exercise `≤-iff-<` (recommended) {#leq-iff-less}
 
 Show that `suc m ≤ n` implies `m < n`, and conversely.
+```
+≤-implies-< : ∀ (m n : ℕ)
+  → suc m ≤ n
+  ------------
+  → m < n
+≤-implies-< zero _ (s≤s sm≤n) = z<s
+≤-implies-< (suc m) (suc n) (s≤s sm≤n) = s<s (≤-implies-< m n sm≤n)
 
-```agda
--- Your code goes here
+<-implies-≤ : ∀ (m n : ℕ)
+  → m < n
+  ------------
+  → suc m ≤ n
+<-implies-≤ .zero _ z<s = s≤s z≤n
+<-implies-≤ (suc m) (suc n) (s<s m<n) = s≤s (<-implies-≤ m n m<n)
 ```
 
 #### Exercise `<-trans-revisited` (practice) {#less-trans-revisited}
@@ -644,8 +722,21 @@ Give an alternative proof that strict inequality is transitive,
 using the relation between strict inequality and inequality and
 the fact that inequality is transitive.
 
-```agda
--- Your code goes here
+```
+≤-suc : ∀ (n : ℕ) → n ≤ suc n
+≤-suc zero = z≤n
+≤-suc (suc n) = s≤s (≤-suc n)
+
+<-trans-revisited : ∀ {m n p : ℕ}
+  → m < n
+  → n < p
+    -----
+  → m < p
+<-trans-revisited {m} {n} {p} m<n n<p = ≤-implies-< m p (≤-trans (≤-trans sm≤n n≤sn) sn≤p)
+  where
+  sm≤n = <-implies-≤ m n m<n
+  sn≤p = <-implies-≤ n p n<p
+  n≤sn = ≤-suc n
 ```
 
 
@@ -751,8 +842,15 @@ successor of the sum of two even numbers, which is even.
 
 Show that the sum of two odd numbers is even.
 
-```agda
--- Your code goes here
+```
+o+o≡e : ∀ {m n : ℕ}
+  → odd m
+  → odd n
+    ------------
+  → even (m + n)
+o+o≡e {suc m} {suc n} (suc em) (suc en) rewrite +-suc m n = suc (suc (e+e≡e em en))
+
+-- Use C-c C-z to search for a top-level definition, Luke
 ```
 
 #### Exercise `Bin-predicates` (stretch) {#Bin-predicates}
@@ -804,8 +902,99 @@ and back is the identity:
 properties of `One`. Also, you may need to prove that
 if `One b` then `1` is less or equal to the result of `from b`.)
 
-```agda
--- Your code goes here
+```
+data Bin : Set where
+  ⟨⟩ : Bin
+  _O : Bin → Bin
+  _I : Bin → Bin
+
+inc : Bin → Bin
+inc ⟨⟩ = ⟨⟩ I
+inc (b O) = b I
+inc (b I) = inc b O
+
+to : ℕ → Bin
+to zero = ⟨⟩ O
+to (suc n) = inc (to n)
+
+from : Bin → ℕ
+from ⟨⟩ = zero
+from (b O) = from b * 2
+from (b I) = suc (from b * 2)
+
+suc-from-comm : ∀ (b : Bin) → from (inc b) ≡ suc (from b)
+suc-from-comm ⟨⟩ = refl
+suc-from-comm (b O) = refl
+suc-from-comm (b I) rewrite suc-from-comm b = refl
+
+from-to-id : ∀ (n : ℕ) → from (to n) ≡ n
+from-to-id zero = refl
+from-to-id (suc n) =
+  begin
+    from (inc (to n))
+  ≡⟨ suc-from-comm (to n) ⟩
+    suc (from (to n))
+  ≡⟨ cong suc (from-to-id n) ⟩
+    suc n
+  ∎
+
+data One : Bin -> Set where
+
+  just-one :   One (⟨⟩ I)
+
+  zero-more :
+          ∀ {b : Bin}
+       -> One b
+          --------------
+       -> One (b O)
+
+  one-more :
+          ∀ {b : Bin}
+       -> One b
+          --------------
+       -> One (b I)
+
+data Can : Bin -> Set where
+
+  can0 : Can (⟨⟩ O)
+
+  can1 :
+          ∀ {b : Bin}
+       -> One b
+          --------------
+       -> Can b
+
+inc-respects-one : ∀ {b : Bin} → One b → One (inc b)
+inc-respects-one just-one = zero-more just-one
+inc-respects-one (zero-more one) = one-more one
+inc-respects-one (one-more one) = zero-more (inc-respects-one one)
+
+inc-respects-can : ∀ {b : Bin} → Can b → Can (inc b)
+inc-respects-can can0 = can1 just-one
+inc-respects-can (can1 one) = can1 (inc-respects-one one)
+
+to-can : ∀ (n : ℕ) → Can (to n)
+to-can zero = can0
+to-can (suc n) = inc-respects-can (to-can n)
+
+to-double' : ∀ (b : Bin) → (from b * 2) ≡ from (b O)
+to-double' ⟨⟩ = refl
+to-double' (b O) = refl
+to-double' (b I) = refl
+
+{-
+to-double : ∀ (b : Bin) → to (from b * 2) ≡ (b O)
+to-double b = {!!} -- ≡-trans (cong to (to-double' b)) from-to-id
+
+one-iso : ∀ {b : Bin} → One b → to (from b) ≡ b
+one-iso just-one = refl
+one-iso (zero-more one) = {!!}
+one-iso (one-more one) = {!!}
+
+can-iso : ∀ {b : Bin} → Can b → to (from b) ≡ b
+can-iso can0 = refl
+can-iso (can1 one) = one-iso one
+-}
 ```
 
 ## Standard library
