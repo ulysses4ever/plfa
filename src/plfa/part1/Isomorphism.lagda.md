@@ -22,6 +22,8 @@ open Eq using (_≡_; refl; cong; cong-app)
 open Eq.≡-Reasoning
 open import Data.Nat using (ℕ; zero; suc; _+_)
 open import Data.Nat.Properties using (+-comm)
+open import plfa.part1.Relations renaming (to to toBin; from to fromBin)
+-- (from-to-id)
 ```
 
 
@@ -479,8 +481,13 @@ which satisfy the following property:
     from (to n) ≡ n
 
 Using the above, establish that there is an embedding of `ℕ` into `Bin`.
-```agda
--- Your code goes here
+```
+ℕ-≲-Bin : ℕ ≲ Bin
+ℕ-≲-Bin = record
+  { to = toBin
+  ; from = fromBin
+  ; from∘to = from-to-id
+  }
 ```
 
 Why do `to` and `from` not form an isomorphism?
