@@ -32,7 +32,7 @@ open Eq using (_≡_; refl)
 open Eq.≡-Reasoning
 open import Data.Nat using (ℕ)
 open import Function using (_∘_)
-open import plfa.part1.Isomorphism using (_≃_; _≲_; extensionality)
+open import plfa.part1.Isomorphism using (_≃_; _≲_; _⇔_; extensionality)
 open plfa.part1.Isomorphism.≃-Reasoning
 ```
 
@@ -237,8 +237,24 @@ corresponds to `⟨ 1 , ⟨ true , aa ⟩ ⟩`, which is a member of the latter.
 Show that `A ⇔ B` as defined [earlier](/Isomorphism/#iff)
 is isomorphic to `(A → B) × (B → A)`.
 
-```agda
--- Your code goes here
+```
+⇔-iso-both-ways-impl : ∀ {A B : Set} → (A ⇔ B) ≃ (A → B) × (B → A)
+⇔-iso-both-ways-impl =
+  record
+    { to      = λ iff → ⟨ _⇔_.to iff , _⇔_.from iff ⟩
+    ; from    = λ pr → record { to = proj₁ pr ; from = proj₂ pr }
+    ; from∘to = λ x → refl
+    ; to∘from = η-×
+    }
+
+⇔-iso-both-ways-impl′ : ∀ {A B : Set} → (A ⇔ B) ≃ (A → B) ×′ (B → A)
+⇔-iso-both-ways-impl′ =
+  record
+    { to      = λ iff → ⟨ _⇔_.to iff , _⇔_.from iff ⟩′
+    ; from    = λ pr → record { to = proj₁′ pr ; from = proj₂′ pr }
+    ; from∘to = λ x → refl
+    ; to∘from = η-×′
+    }
 ```
 
 
